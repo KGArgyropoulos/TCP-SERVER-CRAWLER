@@ -48,7 +48,7 @@ There are three cooperating applications implemented for the purposes of this pr
     * Connection closes after sending a request.
 - Implementation:
     * What we described above, meaning the communication between server and client, is achieved over sockets. There are 2 socket connections, working at the command and the serving port.
-    * threadPool: the most interesting developing choice is the use o a threadPool (httpd_threads.c). At first, threads notify the main functions that they are ready so that main can continue. Then they block untill main notifies them there's been a new request they need to proceed. Each thread takes a fileDescriptor from the queue, reads the request, answers it and writes it to the appropriate fd. Then it notifies main that the job is done and waits in the pool until it needs to be reused.
+    * threadPool: the most interesting developing choice is the use o a threadPool (httpd_threads.c). At first, threads notify the main functions that they are ready so that main can continue. Then they block untill main notifies them there's been a new request they need to proceed. Each thread takes a fileDescriptor from the queue, reads the request, answers it and writes it to the appropriate fd. Then it notifies main that the job is done and waits in the pool until it needs to be re-used.
 
 # Web Crawler
 
@@ -61,4 +61,13 @@ There are three cooperating applications implemented for the purposes of this pr
     * num_of_threads : number of threads running at the crawler. In case some threads terminates, the crawler has to create a new one.
     * save_dir : is the directory in which the crawler stores the pages it downloads. After the end of the crawler's execution (supposed that every page is accessible with an internal or external link) save_dir should be exact copy of the root_dir.
     * starting_URL : is the url, the crawler starts with.
-
+- Crawler's Functionality:
+    * Starts by creating a threadPool with num_of_threads threads. Threads are re-usable. Then creates a queue and stores the up-to-now found links, adding the starting_URL in the queue.
+    * Some thread takes the URL from the queue and requests it from the server. The URL is in the form: http://host_or_ip:port/siteX/pageX_Y.html .
+    * Downloads the file and saves it in save_dir.
+    * Analyzes the downloaded file, finds more links and adds them to the queue as well.
+    * Repeats step 2 with all threads working in parallel until there are no more links in the queue.
+    * At the command port, crawler receives the commands that processes itself, without assigning them to threads. Such commands are:
+        * STATS: works the same way as at the server but for the crawler.
+        * SEARCH w1,w2,...,wn: If the crawling is done (otherwise there's an appropriate message printed) the crawler calls jobExecutor [github link for more on this project: (https://github.com/KGArgyropoulos/Job-Executor) ].
+        * SHUTDOWN: works the same way as at the server but for the crawler.
